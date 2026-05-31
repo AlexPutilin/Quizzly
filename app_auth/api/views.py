@@ -19,7 +19,34 @@ class RegisterView(APIView):
 
 
 class LoginTokenView(TokenObtainPairView):
-    pass
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        user = User.objects.get(username=request.data.get('username'))
+        refresh = response.data.get('refresh')
+        access = response.data.get('access')
+        response.set_cookie(
+            key="access_token",
+            httponly=True,
+            secure=False,
+            value=str(access),
+            samesite='Lax'
+        ),
+        response.set_cookie(
+            key="refresh_token",
+            httponly=True,
+            secure=False,
+            value=str(refresh),
+            samesite='Lax'
+        )
+        response.data = {
+            "detail": "Login successfully!",
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email
+            }
+        }
+        return response
 
 
 class LogoutView(APIView):
